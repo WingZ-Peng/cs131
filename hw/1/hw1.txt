@@ -1,0 +1,52 @@
+# CS 131 HW 1 Writeup 
+
+## Set functions
+
+For the set functions, I initially attempted to use List module functional 
+methods like List.iter, List.map, and List.filter. Having done a lot of 
+functional JavaScript in the past I found these methods very familiar.
+However, I found using these methods to be a bit verbose and unnatural in 
+OCaml. The syntax for chaining methods together was especially rather clunky. 
+I ended up using mostly recursive functions to do list transversal because 
+it felt like a more natural fit for OCaml, similar to the way we used 
+recursion to work with lists in Common Lisp for CS 161. The drawback of this 
+recursive implementation is it tends to take up more memory on the stack 
+because each recursive function call must allocate its own space. However, 
+the spec explicity states, "Simplicity is more important than efficiency," and
+recursive functions led to very succinct and elegant solutions. After 
+implementing the first one or two functions, it became very easy to make 
+slight alterations to become accustomed to the pattern and modify it for new 
+set operations.
+
+## Fixed point and periodic point
+
+Once I grapsed the concept of fixed points and how to search for them 
+recursively, implementing `compute_fixed_point` was almost trivial. The
+periodic point function was a little more tricky, and I initially tried using
+multiple recursive functions to derive the answer before I figured out how to
+implement it in one function. The key was having two options for recursive
+calls: one that recurses inside the argument to f, decrementing p by one each
+time to get x, otherwise recurse similar to computed_fixed_point, passing f(x)
+as the new x.
+
+## Filter blind alleys
+
+Conceptually, I think the best way to approach this problem is to use 
+`computed_fixed_point` and/or `computed_periodic_point` to detect cycles
+(loops) in the grammar from which it is impossible to reach a terminal symbol. 
+In practice, I had some trouble implementing this and ended up implementing an 
+algorithm that does a simple check for terminal rules, then uses BFS from the 
+bottom of the parse tree up to find rules that go to these "known terminal" 
+rules, and so on. Basically, it tries to find a path from the terminal rules 
+upwards to all rules that can reach those terminals.
+
+Again, this isn't the best on memory efficiency, but it's quite clear to
+understand the processing pipeline, which leads to easy debugging and 
+comprehension of the solution. The pipeline, namely, is:
+
+1. Find rules with terminal symbols for the RHS.
+2. Search for rules whose RHSs use only the rules found in #1.
+3. Add these new rules to the list of terminal symbols and repeat until no
+new terminable symbols can be derived.
+4. Sort the subset of the grammar that is terminable in the order of the
+original grammar.
