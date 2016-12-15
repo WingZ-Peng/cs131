@@ -3,13 +3,19 @@ open Hw1;;
 let subset_test0 = assert(subset [] [1;2;3])
 let subset_test1 = assert(subset [3;1;3] [1;2;3])
 let subset_test2 = assert(not (subset [1;3;7] [4;1;3]))
+let my_subset_test_0 = assert(subset [] [])
+let my_subset_test_1 = assert(subset [3;3] [3])
 
 let equal_sets_test0 = assert(equal_sets [1;3] [3;1;3])
 let equal_sets_test1 = assert(not (equal_sets [1;3;4] [3;1;3]))
+let my_equal_sets_test0 = assert(equal_sets [] [])
+let my_equal_sets_test1 = assert(equal_sets [1;2;3] [3;2;1])
 
 let set_union_test0 = assert(equal_sets (set_union [] [1;2;3]) [1;2;3])
 let set_union_test1 = assert(equal_sets (set_union [3;1;3] [1;2;3]) [1;2;3])
 let set_union_test2 = assert(equal_sets (set_union [] []) [])
+let my_set_union_test0 = assert(equal_sets (set_union [1] []) [1])
+let my_set_union_test1 = assert(equal_sets (set_union [1;1] [1;1]) [1])
 
 let set_intersection_test0 =
   assert(equal_sets (set_intersection [] [1;2;3]) [])
@@ -17,11 +23,17 @@ let set_intersection_test1 =
   assert(equal_sets (set_intersection [3;1;3] [1;2;3]) [1;3])
 let set_intersection_test2 =
   assert(equal_sets (set_intersection [1;2;3;4] [3;1;2;4]) [4;3;2;1])
+let my_set_intersection_test0 =
+  assert(equal_sets (set_intersection [1] [1]) [1])
+let my_set_intersection_test1 =
+  assert(equal_sets (set_intersection [5] [5;5;5]) [5])
 
 let set_diff_test0 = assert(equal_sets (set_diff [1;3] [1;4;3;1]) [])
 let set_diff_test1 = assert(equal_sets (set_diff [4;3;1;1;3] [1;3]) [4])
 let set_diff_test2 = assert(equal_sets (set_diff [4;3;1] []) [1;3;4])
 let set_diff_test3 = assert(equal_sets (set_diff [] [4;3;1]) [])
+let my_set_diff_test0 = assert(equal_sets (set_diff [4] [4]) [])
+let my_set_diff_test1 = assert(equal_sets (set_diff [4;4] [4]) [])
 
 let computed_fixed_point_test0 =
   assert(computed_fixed_point (=) (fun x -> x / 2) 1000000000 = 0)
@@ -34,11 +46,15 @@ let computed_fixed_point_test3 =
 			 (fun x -> x /. 2.)
 			 10.)
    = 1.25))
+let my_computed_fixed_point_test0 =
+  assert(computed_fixed_point (=) (fun x -> x / 128) 256 = 0)
 
 let computed_periodic_point_test0 =
   assert(computed_periodic_point (=) (fun x -> x / 2) 0 (-1) = -1)
 let computed_periodic_point_test1 =
   assert(computed_periodic_point (=) (fun x -> x *. x -. 1.) 2 0.5 = -1. )
+let my_computed_periodic_point_test0 =
+  assert(computed_periodic_point (=) (fun x -> x / -2) 0 (1) = 1)
 
 (* An example grammar for a small subset of Awk, derived from but not
    identical to the grammar in
@@ -135,3 +151,37 @@ let giant_test2 =
     (Sentence,
      [Grunt, [T "khrgh"]; Shout, [T "aooogah!"];
       Sentence, [N Grunt]; Sentence, [N Shout]]))
+
+
+(* My filter_blind_alleys test, cf. http://www.imdb.com/title/tt1486217/ *)
+
+type archer_nonterminals =
+  | Utterance | Complaint | Quip | Shout | Person
+
+let archer_grammar = 
+  Utterance,
+  [Complaint, [T"Get it together, "; N Person];
+   Complaint, [T"I'm kind of in the middle of something, "; N Person];
+   Quip, [T"You're entering the Danger Zone!"];
+   Quip, [T"Prasing?"];
+   Quip, [T"You're not my supervisor!"];
+   Quip, [T"Seriously guys have we stopped doing 'phrasing'?"];
+   Shout, [T"Lana!"; N Shout]; (* blind alley rule *)
+   Shout, [T"Danger Zone!"; N Shout]; (* blind alley rule *)
+   Person, [T"Cyril"];
+   Person, [T"Cheryl"];
+   Person, [T"Krieger"];
+   Person, [T"Mother"]]
+  
+let archer_test0 = assert(filter_blind_alleys archer_grammar = 
+  (Utterance,
+    [Complaint, [T"Get it together, "; N Person];
+    Complaint, [T"I'm kind of in the middle of something, "; N Person];
+    Quip, [T"You're entering the Danger Zone!"];
+    Quip, [T"Prasing?"];
+    Quip, [T"You're not my supervisor!"];
+    Quip, [T"Seriously guys have we stopped doing 'phrasing'?"];
+    Person, [T"Cyril"];
+    Person, [T"Cheryl"];
+    Person, [T"Krieger"];
+    Person, [T"Mother"]]))
