@@ -1,0 +1,52 @@
+# CS 131 HW 2 Writeup
+
+## Grammar conversion/differences
+
+The homework 2 style grammar actually felt conceptually more intuitive to me
+because it groups all rules for a given nonterminal under a single array of
+arrays. It was a bit difficult to wrap my head around the conversion process, 
+though, as it forced me to think more about how functions work in OCaml and
+how to go about constructing them programatically, which was also an important
+skill for the rest of the homework. Ultimately the conversion ended up being
+quite simple, only about 10 lines of code. To me, this demonstrated the power
+of functional programming and recursion to transform data structures with
+minimal code.
+
+## Prefix parsing
+
+I initially naively tried attempting this using a bottom-up approach, treating
+it like a search problem as I did for homework 1. However, I quickly realized
+that this simplistic approach was inadequate to solve the problem as 
+specified. I realized I needed two functions, one to iterate through the 
+list of rule lists and another to iterate through the rules of a single rule
+list. I ended up with a prototype of two functions that called each other, one
+to perform each of the previously mentioned tasks. However, I was running into
+a lot of type errors and found the problems difficult to debug. On the advice
+of the TAs, I created a single top-level "matcher" function and defined my two
+recursive functions inside this function. The trickiest part was figuring out 
+to call the matcher from inside check_symbols (my function that iterates 
+through an individual list of rules), omitting the derivation and fragment
+thus far to take advantage of the curried nature of OCaml functions to return
+a function instead of evaluating it until ready.
+
+I noticed I spent over half of my debugging time trying to track down and fix
+type errors derived from OCaml's implicit typing. While this was annoying in
+the moment, I often found that once the type error was corrected, things 
+almost unexpectedly "just worked." OCaml's strict type checking almost 
+definitely helped me avoid more bugs later on.
+
+## Weaknesses/shortcomings
+
+As the name implies, one of the major weaknesses of `parse_prefix` is that it
+doesn't handle expansion from the right hand side (suffix), or any other 
+method of expansion. A variety in expansion order might be desirable depending
+on the application. For example, the syntax of some languages is 
+"right-branching" vs. "left-branching," so it would require a right-expanding
+parser to derive the correct syntax/meaning. Relatedly, as my second test case
+shows, `parse_prefix` doesn't address ambiguity in grammars (unless a given 
+acceptor prevents acceptance of a derivation). Its rule expansion order 
+governs the derivations it chooses even if there are other possible 
+derivations. Finally, an important consideration is that the function has the 
+potential to get stuck in an infinite loop following blind alleys (though 
+perhaps we could use the `filter_blind alleys` from homework 1 to help with 
+this... :)
