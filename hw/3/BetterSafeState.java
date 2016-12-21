@@ -24,8 +24,8 @@ class BetterSafeState implements State {
     public boolean swap(int i, int j) {
       lock.lock();
       if (value[i] <= 0 || value[j] >= maxval) {
-          lock.unlock();
-          return false;
+        lock.unlock();
+        return false;
       }
       value[i]--;
       value[j]++;
