@@ -213,7 +213,7 @@ plain_quotient(T, Coord1, Coord2, Quotient) :-
 % T = solution 2D list
 plain_kenken(N, C, T) :-
   % define "output" list T to be a 2D NxN list
-  %% define for columns
+  % define for columns
   list_of_length(N, T),
   %% define for rows
   maplist(list_of_length(N), T),
@@ -226,6 +226,73 @@ plain_kenken(N, C, T) :-
   maplist(plain_distinct_one_to_n(N), T_transp),
   % all constraints hold
   maplist(plain_constrain_to_fence(T_transp), C).
+
+/* Performance Comparison
+ * Per the spec, I tested the given 4x4 test case (`kenken_test_4` below)
+ * with both the finite domain solver predicate `kenken` and the plain Prolog
+ * predicate `plain_kenken` using the statistics/1 module. The results are
+ * below with irrelevant columns omitted.
+ *
+ * `kenken` results
+ * Memory         in use    
+   trail  stack      4 Kb   
+   cstr   stack     10 Kb   
+   global stack      7 Kb   
+   local  stack      4 Kb   
+   atom   table   1803 atoms
+
+  Times           since last
+    user   time   0.000 sec
+    system time   0.001 sec
+    cpu    time   0.001 sec
+    real   time   0.011 sec
+ *
+ * `plain_kenken` results
+ * Memory            in use    
+   trail  stack         0 Kb   
+   cstr   stack         0 Kb   
+   global stack        11 Kb   
+   local  stack         6 Kb   
+   atom   table      1803 atoms
+
+  Times              since last
+    user   time      0.223 sec
+    system time      0.001 sec
+    cpu    time      0.224 sec
+    real   time      0.225 sec
+ *
+ * As we see, the finite domain solver version both uses less memory and
+ * runs over ~200x faster than `plain_kenken`.
+ */
+
+/* No-op Kenken API
+ *
+ * Function call format: noop_kenken(N, C, T_numbers, T_constraints) where
+ * N = integer describing the number of columns and rows in the puzzle
+ * C = a list of the format [(N, [X1-Y1, X2-Y2,…Xn-Yn])] where N is the
+ * numeric constraint (without an operation) and [X1-Y1,…Xn-Yn] is a list of
+ * the cells to which it applies.
+ * T_numbers = a list of lists representing the filled-in values for the
+ * puzzle, same as T in the regular kenken function.
+ * T_constraints = the given constraint list C except with the correct
+ * operation prepended as in the format of elements in C for the homework.
+ *
+ * A high-level implementation will function similarly to my kenken 
+ * implementations above by defining the length of the row and column lists
+ * and ensuring that the values for each row and column are distinct integers
+ * in the range 1..N. Because there are only four operations, a reasonable
+ * (though somewhat inefficient) approach is simply to try each type of
+ * operation successively as there are only four. That said, the number of
+ * possible operation configurations is 4^|C|; i.e. it grows exponentially
+ * with respect to the length of the constraints list. A smarter 
+ * implementation could apply heuristics to rule out arithmetic operators that
+ * could not possibly be valid for a given set of cells. E.g., if we had a 4x4
+ * matrix and a constraint (24, [1-1, 2-1, 3-1, 4-1]), the only operator that
+ * could satisfy a constraint like this is multplication (e.g. 4*3*2*1), so 
+ * the function could omit testing configurations with the other operators for
+ * this constraint.
+ */
+
 
 % begin tests %
 
