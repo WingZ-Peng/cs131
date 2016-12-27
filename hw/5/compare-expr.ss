@@ -74,8 +74,10 @@
     (if #t 'zoe 'ed)
     ; (16) keyword expression vs. non-keyword expression
     (quote (+ 1 2 3))
-    ; (17) quote keyword and quote literal (should behave identically)
-    (quote (+ 1 2 3))))
+    ; (17) quote keyword vs. quote literal (should behave identically)
+    (quote (+ 1 2 3))
+    ; (18) nesting - let, lambda, equal?, list
+    (let ((a ((lambda (b c) (if (equal? b c) 1 2)) 'bob 'alice))) (list 1 a))))
 
 (define test-y
   '(list ; 0
@@ -95,7 +97,8 @@
     (let ((a 'bob) (z 'alice) (c 'sue)) (+ 1 2 3)) ; 14
     ((lambda (a b) (list a b)) 'zoe 'ed) ; 15
     (+ 1 2 3) ; 16
-    '(+ 1 2 3))) ; 17
+    '(+ 1 2 3) ; 17
+    (let ((a ((lambda (b c) (if (equal? b c) 1 1)) 'bob 'lauren))) (list 1 a)))) ; 18
 
 ;;; debug
 ;; http://www.greghendershott.com/2014/11/racket-workflow.html
