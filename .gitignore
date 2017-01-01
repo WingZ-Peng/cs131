@@ -4,3 +4,4 @@
 *.out
 *.class
 hw/3/results.*
+project/venv/
