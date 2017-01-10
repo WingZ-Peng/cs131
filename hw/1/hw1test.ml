@@ -56,10 +56,15 @@ let computed_periodic_point_test1 =
 let my_computed_periodic_point_test0 =
   assert(computed_periodic_point (=) (fun x -> x / -2) 0 (1) = 1)
 
+let my_while_away_test0 = 
+  assert(while_away ((+) 3) ((>) 10) 0 = [0; 3; 6; 9])
+
+let my_rle_decode_test0 = 
+  assert(rle_decode [1,"h"; 1,"e"; 2,"l"; 1,"o"; 0,"x"] = ["h"; "e"; "l"; "l"; "o"])
+
 (* An example grammar for a small subset of Awk, derived from but not
    identical to the grammar in
    <http://web.cs.ucla.edu/classes/winter06/cs132/hw/hw1.html>.  *)
-
 
 type awksub_nonterminals =
   | Expr | Lvalue | Incrop | Binop | Num

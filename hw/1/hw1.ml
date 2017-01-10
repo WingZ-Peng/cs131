@@ -3,6 +3,15 @@ type ('nonterminal, 'terminal) symbol =
   | N of 'nonterminal
   | T of 'terminal
 
+(* utility functions to get the lhs and rhs of tuples (i.e. grammar rules) 
+   cf. http://stackoverflow.com/a/26005812
+*)
+let get_lhs (x, _) = x
+;;
+
+let get_rhs (_, x) = x
+;;
+
 let rec find a b = 
   match b with
   | [] -> false
@@ -74,17 +83,29 @@ let rec computed_periodic_point eq f (p: int) x =
       else computed_periodic_point eq f p (f x)
 ;;
 
+let rec while_away s p x = 
+  match p x with 
+  | false -> []
+  | true -> x::(while_away s p (s x))
+;;
+
+(* utility function for rle_decode *)
+let rec repeat_char _char times = 
+  match times with
+  | 0 -> []
+  | _ -> _char::repeat_char _char (times - 1)
+;;
+
+let rec rle_decode lp = 
+  match lp with
+  | [] -> []
+  | first::rest ->
+    (* @ concatenates two lists 
+       https://caml.inria.fr/pub/docs/manual-ocaml/libref/List.html *)
+    (repeat_char (get_rhs first) (get_lhs first)) @ rle_decode rest
+;;
 
 (* filter_blind_alleys helper functions *)
-
-(* utility functions to get the lhs and rhs of tuples (i.e. grammar rules) 
-   cf. http://stackoverflow.com/a/26005812
-*)
-let get_lhs (x, _) = x
-;;
-
-let get_rhs (_, x) = x
-;;
 
 (* map function that takes a list of 2-tuples and returns a list of the 
    contents of each tuple's first (index 0) element *)
