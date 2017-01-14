@@ -17,7 +17,8 @@ representation(., [1,1]). % dih
 representation(^, [0,0]). % letter boundary
 representation(^, [0,0,0,0]). % letter boundary
 
-% morse knowledge base from spec
+% begin morse knowledge base from spec %
+
 morse(a, [.,-]).           % A
 morse(b, [-,.,.,.]).	   % B
 morse(c, [-,.,-,.]).	   % C
@@ -78,8 +79,89 @@ morse(ct, [-,.,-,.,-]).          % CT (starting signal, Copy This)
 morse(sk, [.,.,.,-,.,-]).        % SK (end of work, Silent Key)
 morse(sn, [.,.,.,-,.]).          % SN (understood, Sho' 'Nuff)
 
+% end morse knowledge base %
 
-signal_morse(I, O).
+% partition_input_once(I, O1, O2) :- 
+%   sublist(O1, I), 
+%   sublist(O2, I), 
+%   equal_length(O1, O2),
+%   O1 \= O2.
+
+% partition_input_once([], [], []).
+% partition_input_once([IFirst|IRest], [IFirst|O1], O2) :- 
+%   partition_input_once(IRest, O1, O2).
+% partition_input_once([IFirst|IRest], O1, [IFirst|O2]) :- 
+%   partition_input_once(IRest, O1, O2).
+
+% partition_input_all([], []).
+% partition_input_all([IFirst|IRest], [[IFirst|ORest]|Pss]) :-
+%   partition_input_once(IRest, ORest, Res),
+%   partition_input_all(Res, Pss).
+
+% list_n_parts(List, Parts, Result) :-
+%     length(Result, Parts),
+%     append(Result, List).
+
+lists_identical([], []).
+lists_identical([First1|Rest1], [First2|Rest2]) :-
+  First1 = First2, lists_identical(Rest1, Rest2).
+
+append_all(Prefix, Lists, Prefixedlists) :-
+  maplist(append(Prefix), Lists, Prefixedlists).
+
+% trace. list_partitioned([a,b,c], O).
+list_partitioned([], []).
+% list_partitioned(I, O) :-
+%  lists_identical(I, O).
+list_partitioned([First|RestI], [First|RestO]) :-
+  append_all([First], list_partitioned(RestI, RestO), First).
+
+div(L, A, B) :-
+    append(A, B, L),
+    length(A, N),
+    length(B, N).
+
+% split([a,b,c,d], O).
+% split([], []).
+% split([First | Tail], [[First] | Rest]) :-
+%     split(Tail, Rest).
+% split([First | Tail], [First | Rest]) :-
+%    split(Tail, Rest).
+
+% part([a,b,c,d], 2, O).
+part([], 0, []).
+part(L, N, [DL|DLTail]) :-
+   length(DL, N),
+   append(DL, LTail, L),
+   part(LTail, (X is (N - 1)), DLTail).
+
+list_has_items([], false).
+list_has_items([_|_], true).
+
+split(List, Prefix, Suffix) :-    % to trim N elements from a list
+  append(Prefix, Suffix, List), % - split L into a prefix and suffix
+  list_has_items(Prefix, true),
+  list_has_items(Suffix, true).
+
+partitioned(List, Output) :-
+  split(List, P, S),
+  partitioned(P, Q),
+  partitioned(S, R),
+  append(Q, R, Output).
+partitioned(List, [List]).
+
+signal_morse([], []).
+signal_morse(I, M) :- morse(M, I).
 
 
 signal_message(I, O).
+
+
+
+app([], X, X).
+app([H|T], Y, [H|Z]) :- app(T, Y, Z).
+encode([], []).
+encode([Letter|Text], Coding) :-
+  translate(Letter, Code),
+  app(Code, RestCode, Coding),
+  encode(Text, RestCode).
