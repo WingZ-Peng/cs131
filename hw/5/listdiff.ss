@@ -34,6 +34,11 @@
   ; return an ERROR atom for testing purposes
   (if (or (not (listdiff? d)) (null-ld? d)) 'ERROR (car (car d))))
 
+;; Return a listdiff containing all but the first element of listdiff. It is 
+;; an error if listdiff has no elements.
+(define (cdr-ld d)
+  (if (or (not (listdiff? d)) (null-ld? d)) 'ERROR (cons (cdr (car d)) (cdr d))))
+
 ;; helper function for length-ld, below
 ;; identical to listdiff? except it keeps and increments a count for each
 ;; recursive call
@@ -89,11 +94,18 @@
 (define (listdiff->list d)
   (listdiff->list-helper d '()))
 
+
+;; helper function for expr-returning, below
+(define (expr-returning-helper prefix suffix)
+  (quasiquote (let ((prefix (quote (unquote prefix))) (suffix (quote (unquote suffix)))) (cons (append prefix suffix) suffix))))
+
 ;; Return a Scheme expression that, when evaluated, will return a copy of 
 ;; listdiff, that is, a listdiff that has the same top-level data structure as 
 ;; listdiff. Your implementation can assume that the argument listdiff 
 ;; contains only booleans, characters, numbers, and symbols.
-;(define (expr-returning listdiff))
+(define (expr-returning d)
+  (let ((split (length (listdiff->list d))))
+    (expr-returning-helper (take (car d) split) (list-tail (car d) split))))
 
 
 ;;; debugging
@@ -117,8 +129,8 @@
 (define d4 (cons '() ils))
 (define d5 0)
 (define d6 (listdiff ils d1 37))
-;(define d7 (append-ld d1 d2 d6))
-;(define e1 (expr-returning d1))
+(define d7 (append-ld d1 d2 d6))
+(define e1 (expr-returning d1))
 
 (assert (listdiff? d1) #t)
 (assert (listdiff? d2) #t)
@@ -126,7 +138,7 @@
 (assert (listdiff? d4) #f)
 (assert (listdiff? d5) #f)
 (assert (listdiff? d6) #t)
-;(assert (listdiff? d7) #t)
+(assert (listdiff? d7) #t)
 
 (assert (null-ld? d1) #f)
 (assert (null-ld? d2) #t)
@@ -142,7 +154,7 @@
 (assert (length-ld d2) 0)
 (assert (length-ld d3) 'ERROR)
 (assert (length-ld d6) 3)
-;(assert (length-ld d7) 5)
+(assert (length-ld d7) 5)
 
 (define kv1 (cons d1 'a))
 (define kv2 (cons d2 'b))
@@ -154,13 +166,13 @@
 (assert (eq? (assq-ld d2 d8) kv2) #t)
 (assert (eq? (assq-ld d1 d8) kv4) #f)
 
-;(assert (eq? (car-ld d6) ils) #t)
-;(assert (eq? (car-ld (cdr-ld d6)) d1) #t)
-;(assert (eqv? (car-ld (cdr-ld (cdr-ld d6))) 37) #t)
+(assert (eq? (car-ld d6) ils) #t)
+(assert (eq? (car-ld (cdr-ld d6)) d1) #t)
+(assert (eqv? (car-ld (cdr-ld (cdr-ld d6))) 37) #t)
 (assert (equal? (listdiff->list d6)
         (list ils d1 37)) #t)
-;(assert (eq? (list-tail (car d6) 3) (cdr d6)) #t)
+(assert (eq? (list-tail (car d6) 3) (cdr d6)) #t)
 
-;(assert (listdiff->list (eval e1)) '(a e))
-;(assert (equal? (listdiff->list (eval e1))
-;        (listdiff->list d1)) #t)
+(assert (listdiff->list (eval e1)) '(a e))
+(assert (equal? (listdiff->list (eval e1))
+        (listdiff->list d1)) #t)
