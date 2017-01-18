@@ -5,17 +5,18 @@
 % dah:             111 or 11+
 
 % unambiguous representations
-representation(separator, [0]). % separates adjancent dih and dah
-representation(., [1]). % dih
-representation(-, [1,1|Rest]). % dah
-representation(^, [0,0,0]). % letter boundary
-representation(#, [0,0,0,0,0|Rest]). % word boundary
+% representation([], []).
+% representation([0], s). % separates adjancent dih and dah
+representation([0,1], .). % dih
+representation([0,1,1|Rest], -) :- maplist(is(1), Rest). % dah
+representation([0,0,0], ^). % letter boundary
+representation([0,0,0,0,0|Rest], #) :- maplist(is(0), Rest). % word boundary
 
 % ambiguous representations
-representation(separator, [0,0]). % separates adjancent dih and dah
-representation(., [1,1]). % dih
-representation(^, [0,0]). % letter boundary
-representation(^, [0,0,0,0]). % letter boundary
+representation([0,0], s). % separates adjancent dih and dah
+representation([0,1,1], .). % dih
+representation([0,0], ^). % letter boundary
+representation([0,0,0,0], ^). % letter boundary
 
 % begin morse knowledge base from spec %
 
@@ -102,24 +103,24 @@ morse(sn, [.,.,.,-,.]).          % SN (understood, Sho' 'Nuff)
 %     length(Result, Parts),
 %     append(Result, List).
 
-lists_identical([], []).
-lists_identical([First1|Rest1], [First2|Rest2]) :-
-  First1 = First2, lists_identical(Rest1, Rest2).
+% lists_identical([], []).
+% lists_identical([First1|Rest1], [First2|Rest2]) :-
+%   First1 = First2, lists_identical(Rest1, Rest2).
 
-append_all(Prefix, Lists, Prefixedlists) :-
-  maplist(append(Prefix), Lists, Prefixedlists).
+% append_all(Prefix, Lists, Prefixedlists) :-
+%   maplist(append(Prefix), Lists, Prefixedlists).
 
 % trace. list_partitioned([a,b,c], O).
-list_partitioned([], []).
+% list_partitioned([], []).
 % list_partitioned(I, O) :-
 %  lists_identical(I, O).
-list_partitioned([First|RestI], [First|RestO]) :-
-  append_all([First], list_partitioned(RestI, RestO), First).
+% list_partitioned([First|RestI], [First|RestO]) :-
+%   append_all([First], list_partitioned(RestI, RestO), First).
 
-div(L, A, B) :-
-    append(A, B, L),
-    length(A, N),
-    length(B, N).
+% div(L, A, B) :-
+%     append(A, B, L),
+%     length(A, N),
+%     length(B, N).
 
 % split([a,b,c,d], O).
 % split([], []).
@@ -129,29 +130,49 @@ div(L, A, B) :-
 %    split(Tail, Rest).
 
 % part([a,b,c,d], 2, O).
-part([], 0, []).
-part(L, N, [DL|DLTail]) :-
-   length(DL, N),
-   append(DL, LTail, L),
-   part(LTail, (X is (N - 1)), DLTail).
+% part([], 0, []).
+% part(L, N, [DL|DLTail]) :-
+%    length(DL, N),
+%    append(DL, LTail, L),
+%    part(LTail, (X is (N - 1)), DLTail).
 
-list_has_items([], false).
-list_has_items([_|_], true).
+% list has no items
+empty([], true).
+% list has at least one item
+empty([_|_], false).
 
-split(List, Prefix, Suffix) :-    % to trim N elements from a list
-  append(Prefix, Suffix, List), % - split L into a prefix and suffix
-  list_has_items(Prefix, true),
-  list_has_items(Suffix, true).
+% split a List into all possible Prefixes and Suffixes
+split(List, Prefix, Suffix) :-
+  append(Prefix, Suffix, List).
+%  empty(Prefix, false),
+%   empty(Suffix, false).
 
-partitioned(List, Output) :-
-  split(List, P, S),
-  partitioned(P, Q),
-  partitioned(S, R),
-  append(Q, R, Output).
-partitioned(List, [List]).
+% partitioned(List, Output) :-
+%   split(List, Prefix, Suffix),
+%   partitioned(Prefix, RecPrefix),
+%   partitioned(Suffix, RecSuffix),
+%   append(RecPrefix, RecSuffix, Output).
+% partitioned(List, [List]).
 
-signal_morse([], []).
-signal_morse(I, M) :- morse(M, I).
+% given input I, instantiates Match and Suffix to all possible representations  
+% of prefix(I) and their remaining Suffixes
+% match_prefix([], [], []).
+match_prefix(I, Match, Suffix) :- 
+  split(I, Prefix, Suffix),
+  representation(Prefix, Match).
+
+% signal_morse([0,1,1,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1,0,0,0,1,0,1,1,1,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,1,0,1,0,1,1,1,0,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1,0],M).
+% signal_morse([], O).
+% signal_morse(I, O) :-
+%   match_prefix(I, Match, Suffix),
+%   empty(Match, false),
+%   empty(Suffix, true).
+signal_morse(I, O) :-
+  match_prefix(I, Match, Suffix),
+  append([Match], O, NewO),
+  signal_morse(Suffix, NewO).
+
+%  maplist(representation, P, O).
 
 
 signal_message(I, O).
