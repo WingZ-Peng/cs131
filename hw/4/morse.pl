@@ -111,7 +111,7 @@ no_spaces([First|Rest]) :-
 % assert that the given list contains no adjacent space characters ([^, #])
 no_adjacent_spaces([]).
 % one-item lists have no adjacent spaces
-no_adjacent_spaces([Only]).
+no_adjacent_spaces([_]).
 % assert that the first two elements are not both spaces (& recurse)
 no_adjacent_spaces([First,Second|Rest]) :-
   Spaces = [^, #],
@@ -145,7 +145,6 @@ match_message_prefix(I, [Match], Suffix) :-
   no_spaces(I),
   morse(Match, I),
   length(Suffix, 0).
-
 
 % greedily build the smallest available match, backtracing as necessary to
 % ensure that all parts of the pattern are matched with a representation
