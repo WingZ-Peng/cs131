@@ -5,7 +5,6 @@
 % dah:             111 or 11+
 
 % unambiguous representations
-% representation([], []).
 % representation([0], s). % separates adjancent dih and dah
 representation([0,1], .). % dih
 representation([0,1,1|Rest], -) :- maplist(is(1), Rest). % dah
@@ -13,7 +12,7 @@ representation([0,0,0], ^). % letter boundary
 representation([0,0,0,0,0|Rest], #) :- maplist(is(0), Rest). % word boundary
 
 % ambiguous representations
-representation([0,0], s). % separates adjancent dih and dah
+% representation([0,0], s). % separates adjancent dih and dah
 representation([0,1,1], .). % dih
 representation([0,0], ^). % letter boundary
 representation([0,0,0,0], ^). % letter boundary
@@ -79,110 +78,109 @@ morse(as, [.,-,.,.,.]).          % AS (wait A Second)
 morse(ct, [-,.,-,.,-]).          % CT (starting signal, Copy This)
 morse(sk, [.,.,.,-,.,-]).        % SK (end of work, Silent Key)
 morse(sn, [.,.,.,-,.]).          % SN (understood, Sho' 'Nuff)
-
 % end morse knowledge base %
 
-% partition_input_once(I, O1, O2) :- 
-%   sublist(O1, I), 
-%   sublist(O2, I), 
-%   equal_length(O1, O2),
-%   O1 \= O2.
-
-% partition_input_once([], [], []).
-% partition_input_once([IFirst|IRest], [IFirst|O1], O2) :- 
-%   partition_input_once(IRest, O1, O2).
-% partition_input_once([IFirst|IRest], O1, [IFirst|O2]) :- 
-%   partition_input_once(IRest, O1, O2).
-
-% partition_input_all([], []).
-% partition_input_all([IFirst|IRest], [[IFirst|ORest]|Pss]) :-
-%   partition_input_once(IRest, ORest, Res),
-%   partition_input_all(Res, Pss).
-
-% list_n_parts(List, Parts, Result) :-
-%     length(Result, Parts),
-%     append(Result, List).
-
-% lists_identical([], []).
-% lists_identical([First1|Rest1], [First2|Rest2]) :-
-%   First1 = First2, lists_identical(Rest1, Rest2).
-
-% append_all(Prefix, Lists, Prefixedlists) :-
-%   maplist(append(Prefix), Lists, Prefixedlists).
-
-% trace. list_partitioned([a,b,c], O).
-% list_partitioned([], []).
-% list_partitioned(I, O) :-
-%  lists_identical(I, O).
-% list_partitioned([First|RestI], [First|RestO]) :-
-%   append_all([First], list_partitioned(RestI, RestO), First).
-
-% div(L, A, B) :-
-%     append(A, B, L),
-%     length(A, N),
-%     length(B, N).
-
-% split([a,b,c,d], O).
-% split([], []).
-% split([First | Tail], [[First] | Rest]) :-
-%     split(Tail, Rest).
-% split([First | Tail], [First | Rest]) :-
-%    split(Tail, Rest).
-
-% part([a,b,c,d], 2, O).
-% part([], 0, []).
-% part(L, N, [DL|DLTail]) :-
-%    length(DL, N),
-%    append(DL, LTail, L),
-%    part(LTail, (X is (N - 1)), DLTail).
-
-% list has no items
-empty([], true).
-% list has at least one item
-empty([_|_], false).
+% instantiate Rest to the tail of the given list
+rest([_|Rest], Rest).
 
 % split a List into all possible Prefixes and Suffixes
 split(List, Prefix, Suffix) :-
   append(Prefix, Suffix, List).
-%  empty(Prefix, false),
-%   empty(Suffix, false).
 
-% partitioned(List, Output) :-
-%   split(List, Prefix, Suffix),
-%   partitioned(Prefix, RecPrefix),
-%   partitioned(Suffix, RecSuffix),
-%   append(RecPrefix, RecSuffix, Output).
-% partitioned(List, [List]).
+% split a list into two parts where Prefix is composed of the items up to but 
+% *not* including the item at index N, and Suffix is composed of the items 
+% following index N.
+% N.B. the item at index N is not a member of either of the two instantiated 
+% lists
+split_n(List, N, Prefix, RestSuffix) :-
+  append(Prefix, Suffix, List),
+  % length/2 is inclusive of the element at position N. We don't want This
+  % element, so decrement N by one...
+  NDec is N-1, 
+  length(Prefix, NDec),
+  % ...and chop one element off the Suffix list
+  rest(Suffix, RestSuffix).
+
+% assert that the given list contains no space characters ([^, #])
+no_spaces([]).
+no_spaces([First|Rest]) :- 
+  Spaces = [^, #],
+  \+ (member(First, Spaces)),
+  no_spaces(Rest).
+
+% assert that the given list contains no adjacent space characters ([^, #])
+no_adjacent_spaces([]).
+% one-item lists have no adjacent spaces
+no_adjacent_spaces([Only]).
+% assert that the first two elements are not both spaces (& recurse)
+no_adjacent_spaces([First,Second|Rest]) :-
+  Spaces = [^, #],
+  \+ (member(First, Spaces), member(Second, Spaces)),
+  no_adjacent_spaces([Second|Rest]).
 
 % given input I, instantiates Match and Suffix to all possible representations  
 % of prefix(I) and their remaining Suffixes
-% match_prefix([], [], []).
-match_prefix(I, Match, Suffix) :- 
+match_morse_prefix(I, Match, Suffix) :- 
   split(I, Prefix, Suffix),
   representation(Prefix, Match).
 
-% signal_morse([0,1,1,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1,0,0,0,1,0,1,1,1,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,1,0,1,0,1,1,1,0,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1,0],M).
-% signal_morse([], O).
-% signal_morse(I, O) :-
-%   match_prefix(I, Match, Suffix),
-%   empty(Match, false),
-%   empty(Suffix, true).
-signal_morse(I, O) :-
-  match_prefix(I, Match, Suffix),
-  append([Match], O, NewO),
-  signal_morse(Suffix, NewO).
+% instantiates Match and Suffix to the character represented by the first 
+% sublist of morse code before a space, with Suffix instantiated to the
+% remaining unmatched input
+match_message_prefix(I, [Match], Suffix) :- 
+  nth(N, I, ^),
+  split_n(I, N, Prefix, Suffix),
+  morse(Match, Prefix).
+% if this matching sublist ends in a hash, it represents a word boundary which
+% should be preserved in our Match; construct a 2-element list composed of 
+% Match and a hash
+match_message_prefix(I, MatchHash, Suffix) :- 
+  nth(N, I, #),
+  split_n(I, N, Prefix, Suffix),
+  morse(Match, Prefix),
+  append([Match], [#], MatchHash).
+% if the given input has no spaces, just try to instantiate the entire given
+% input to a character and return an empty Suffix list
+match_message_prefix(I, [Match], Suffix) :-
+  no_spaces(I),
+  morse(Match, I),
+  length(Suffix, 0).
 
-%  maplist(representation, P, O).
 
+% greedily build the smallest available match, backtracing as necessary to
+% ensure that all parts of the pattern are matched with a representation
+% uses the accumulator technique
+% http://www.cs.bham.ac.uk/~pjh/prolog_module/md5/md5_accumulators.html
+signal_morse_helper([], O, O).
+signal_morse_helper(I, Acc, O) :-
+  match_morse_prefix(I, Match, Suffix),
+  append(Acc, [Match], NewAcc),
+  no_adjacent_spaces(NewAcc),
+  signal_morse_helper(Suffix, NewAcc, O).
 
-signal_message(I, O).
+% signal_morse([1,1,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1,0,0,0,1,0,1,1,1,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,1,0,1,0,1,1,1,0,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1],M).
+% if the First element of the given representation is zero, just call the
+% helper with the input as-is...
+signal_morse([First|Rest], O) :-
+  First = 0,
+  signal_morse_helper([First|Rest], [], O).
+% ...otherwise, because our representation for dihs and dahs requires that 
+% they begin with a zero, append a zero to the beginning of the input 
+% (implicit silence before recording begins)
+signal_morse([First|Rest], O) :-
+  First = 1,
+  append([0], [First|Rest], I),
+  signal_morse_helper(I, [], O).
 
+% recursively Match input with a character up until the next space until the
+% whole input has been represented or failure
+signal_message_helper([], O, O).
+signal_message_helper(I, Acc, O) :-
+  match_message_prefix(I, Match, Suffix),
+  append(Acc, Match, NewAcc),
+  signal_message_helper(Suffix, NewAcc, O).
 
-
-app([], X, X).
-app([H|T], Y, [H|Z]) :- app(T, Y, Z).
-encode([], []).
-encode([Letter|Text], Coding) :-
-  translate(Letter, Code),
-  app(Code, RestCode, Coding),
-  encode(Text, RestCode).
+% signal_message([1,1,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1,0,0,0,1,0,1,1,1,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,1,0,1,0,1,1,1,0,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1],M).
+signal_message(I, O) :-
+  signal_morse(I, Morse),
+  signal_message_helper(Morse, [], O).
