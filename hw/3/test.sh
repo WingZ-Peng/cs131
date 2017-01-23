@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # `Unsynchronized` and `GetNSet` omitted because they can deadlock
-for class in Synchronized #Null BetterSafe BetterSorry
+for class in BetterSorry
 do
   echo "testing ${class}..."
   for nthreads in 1 2 4 8 16 32
@@ -10,7 +10,8 @@ do
     for i in {1..100}
     do 
       java UnsafeMemory "$class" "$nthreads" 100000 6 5 6 3 0 3 | \
-      grep -oE ' \d+' >> \
+      grep -oP ' \d+' | \
+      head -1 >> \
       "results.${class}.txt"
     done
   done
