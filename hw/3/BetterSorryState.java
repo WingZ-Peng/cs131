@@ -1,13 +1,18 @@
+import java.util.concurrent.locks.ReentrantLock;
+
 class BetterSorryState implements State {
     private byte[] value;
     private byte maxval;
+    private ReentrantLock lock;
 
     BetterSorryState(byte[] v) { 
+      lock = new ReentrantLock();
       value = v; 
       maxval = 127; 
     }
 
     BetterSorryState(byte[] v, byte m) {
+      lock = new ReentrantLock();
       value = v; 
       maxval = m; 
     }
@@ -20,8 +25,8 @@ class BetterSorryState implements State {
       if (value[i] <= 0 || value[j] >= maxval) {
           return false;
       }
-      synchronized (this) { value[i]--; }
-      synchronized (this) { value[j]++; }
+      lock.lock(); value[i]--;
+      value[j]++; lock.unlock();
       return true;
     }
 }
