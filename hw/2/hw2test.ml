@@ -94,28 +94,28 @@ let awkish_grammar =
 	  [T"5"]; [T"6"]; [T"7"]; [T"8"]; [T"9"]])
 
 let test0 =
-  assert ((parse_prefix awkish_grammar accept_all ["ouch"]) = None)
+  (parse_prefix awkish_grammar accept_all ["ouch"]) = None
 
 let test1 =
-  assert ((parse_prefix awkish_grammar accept_all ["9"])
-   = Some ([(Expr, [N Term]); (Term, [N Num]); (Num, [T "9"])], []))
+  (parse_prefix awkish_grammar accept_all ["9"])
+   = Some ([(Expr, [N Term]); (Term, [N Num]); (Num, [T "9"])], [])
 
 let test2 =
-  assert ((parse_prefix awkish_grammar accept_all ["9"; "+"; "$"; "1"; "+"])
+  (parse_prefix awkish_grammar accept_all ["9"; "+"; "$"; "1"; "+"])
    = Some
        ([(Expr, [N Term; N Binop; N Expr]); (Term, [N Num]); (Num, [T "9"]);
 	 (Binop, [T "+"]); (Expr, [N Term]); (Term, [N Lvalue]);
 	 (Lvalue, [T "$"; N Expr]); (Expr, [N Term]); (Term, [N Num]);
 	 (Num, [T "1"])],
-	["+"]))
+	["+"])
 
 let test3 =
-  assert ((parse_prefix awkish_grammar accept_empty_suffix ["9"; "+"; "$"; "1"; "+"])
-   = None)
+  (parse_prefix awkish_grammar accept_empty_suffix ["9"; "+"; "$"; "1"; "+"])
+   = None
 
 (* This one might take a bit longer.... *)
 let test4 =
- assert ((parse_prefix awkish_grammar accept_all
+ (parse_prefix awkish_grammar accept_all
      ["("; "$"; "8"; ")"; "-"; "$"; "++"; "$"; "--"; "$"; "9"; "+";
       "("; "$"; "++"; "$"; "2"; "+"; "("; "8"; ")"; "-"; "9"; ")";
       "-"; "("; "$"; "$"; "$"; "$"; "$"; "++"; "$"; "$"; "5"; "++";
@@ -157,7 +157,7 @@ let test4 =
        (Term, [N Lvalue; N Incrop]); (Lvalue, [T "$"; N Expr]); (Expr, [N Term]);
        (Term, [N Num]); (Num, [T "8"]); (Incrop, [T "++"]); (Incrop, [T "++"]);
        (Binop, [T "+"]); (Expr, [N Term]); (Term, [N Num]); (Num, [T "0"])],
-      []))
+      [])
 
 let rec contains_lvalue = function
   | [] -> false
@@ -170,12 +170,12 @@ let accept_only_non_lvalues rules frag =
   else Some (rules, frag)
 
 let test5 =
-  assert ((parse_prefix awkish_grammar accept_only_non_lvalues
+  (parse_prefix awkish_grammar accept_only_non_lvalues
       ["3"; "-"; "4"; "+"; "$"; "5"; "-"; "6"])
    = Some
       ([(Expr, [N Term; N Binop; N Expr]); (Term, [N Num]); (Num, [T "3"]);
 	(Binop, [T "-"]); (Expr, [N Term]); (Term, [N Num]); (Num, [T "4"])],
-       ["+"; "$"; "5"; "-"; "6"]))
+       ["+"; "$"; "5"; "-"; "6"])
 
 (* my test cases *)
 
@@ -199,7 +199,7 @@ let archer_grammar =
 (* test parse_prefix is not able to derive anything for a string that would
    require following blind alley rules (impossible to arrive at all 
    terminal rules) *)
-let test_1 = assert ((parse_prefix archer_grammar accept_all ["Lana!"; "Lana!"; "Lana!";]) = None)
+let test_1 = (parse_prefix archer_grammar accept_all ["Lana!"; "Lana!"; "Lana!";]) = None
 
 (* a test using an ambiguous grammar *)
 
@@ -229,7 +229,7 @@ Though the grammar is ambiguous, parse_prefix derives interpetation (2) every
 time due to the rule ordering.
  *)
 
-let test_2 = assert ((parse_prefix ambiguous_english_grammar accept_all 
+let test_2 = (parse_prefix ambiguous_english_grammar accept_all 
                       ["I"; "saw"; "the"; "man"; "with"; "the"; "telescope"])
            = Some
            ([(Sentence, [N DeterminerPhrase; N VerbPhrase;]); 
@@ -240,4 +240,3 @@ let test_2 = assert ((parse_prefix ambiguous_english_grammar accept_all
              (PrepositionalPhrase, [N Preposition; N DeterminerPhrase]);
              (Preposition, [T"with"]); (DeterminerPhrase, [N Determiner; N Noun]);
              (Determiner, [T"the"]); (Noun, [T"telescope"])], [])
-)
