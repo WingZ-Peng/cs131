@@ -1,21 +1,26 @@
+% begin representation rules %
+
 % separator:       0 or 00
 % letter boundary: 000 or 00 or 0000
 % word boundary:   0000000 or 00000+
 % dih:             1 or 11
 % dah:             111 or 11+
 
-% unambiguous representations
-% representation([0], s). % separates adjancent dih and dah
+% canonical representations
 representation([0,1], .). % dih
-representation([0,1,1|Rest], -) :- maplist(is(1), Rest). % dah
 representation([0,0,0], ^). % letter boundary
+representation([0,1,1|Rest], -) :- maplist(is(1), Rest). % dah
 representation([0,0,0,0,0|Rest], #) :- maplist(is(0), Rest). % word boundary
 
-% ambiguous representations
-% representation([0,0], s). % separates adjancent dih and dah
-representation([0,1,1], .). % dih
+% "corrupted" representations
 representation([0,0], ^). % letter boundary
+representation([0,1,1], .). % dih
+representation([0,0,1], .). % dih
+representation([0,0,1,1], .). % dih
 representation([0,0,0,0], ^). % letter boundary
+representation([0,0,1,1|Rest], -) :- maplist(is(1), Rest). % dah
+
+% end representation rules %
 
 % begin morse knowledge base from spec %
 
@@ -118,6 +123,11 @@ no_adjacent_spaces([First,Second|Rest]) :-
   \+ (member(First, Spaces), member(Second, Spaces)),
   no_adjacent_spaces([Second|Rest]).
 
+% instantiates a list without its last element
+no_last([_], []).
+no_last([H|T1], [H|T2]) :-
+  no_last(T1, T2).
+
 % given input I, instantiates Match and Suffix to all possible representations  
 % of prefix(I) and their remaining Suffixes
 match_morse_prefix(I, Match, Suffix) :- 
@@ -157,19 +167,58 @@ signal_morse_helper(I, Acc, O) :-
   no_adjacent_spaces(NewAcc),
   signal_morse_helper(Suffix, NewAcc, O).
 
-% signal_morse([1,1,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1,0,0,0,1,0,1,1,1,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,1,0,1,0,1,1,1,0,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1],M).
 % if the First element of the given representation is zero, just call the
 % helper with the input as-is...
-signal_morse([First|Rest], O) :-
-  First = 0,
-  signal_morse_helper([First|Rest], [], O).
+leading_zero([First|Rest], [First|Rest]) :-
+  First = 0.
 % ...otherwise, because our representation for dihs and dahs requires that 
 % they begin with a zero, append a zero to the beginning of the input 
 % (implicit silence before recording begins)
-signal_morse([First|Rest], O) :-
+leading_zero([First|Rest], O) :-
   First = 1,
-  append([0], [First|Rest], I),
-  signal_morse_helper(I, [], O).
+  append([0], [First|Rest], O).
+
+no_trailing_zero(I, I) :-
+  last(I, Last),
+  Last = 1.
+no_trailing_zero(I, O) :-
+  last(I, Last),
+  Last = 0,
+  no_last(I, O).
+
+% signal_morse([1,1,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1,0,0,0,1,0,1,1,1,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,1,0,1,0,1,1,1,0,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1],M).
+signal_morse(I, O) :-
+  leading_zero(I, IL),
+  no_trailing_zero(IL, IT),
+  % dedupe results using method fix #2:
+  % https://www.csee.umbc.edu/~finin/prolog/sibling/siblings.html
+  setof(Opts, signal_morse_helper(IT, [], Opts), L), member(O, L).
+
+% if the last token is a word boundary, stop
+chew_error(Prefix, Prefix) :-
+  last(Prefix, Last),
+  member(Last, [#, error]).
+% otherwise, recursively remove the last element of the list
+chew_error(Prefix, PrefixNoError) :-
+  no_last(Prefix, PrefixNoLast),
+  chew_error(PrefixNoLast, PrefixNoError).
+
+% if the last token is an error token, do not modify
+swallow_error(Prefix, Prefix) :-
+  last(Prefix, Last),
+  Last \= error.
+% if the last token is an error token and the second-to-last token is either a
+% word boundary or error, stop
+swallow_error(Prefix, Prefix) :-
+  reverse(Prefix, [H1,H2|_]),
+  H1 = error,
+  member(H2, [#, error]).
+% otherwise, if the last token is an error, remove it and start chewing
+swallow_error(Prefix, PrefixNoError) :-
+  last(Prefix, Last),
+  Last = error,
+  no_last(Prefix, PrefixNoLast),
+  chew_error(PrefixNoLast, PrefixNoError).
 
 % recursively Match input with a character up until the next space until the
 % whole input has been represented or failure
@@ -177,9 +226,11 @@ signal_message_helper([], O, O).
 signal_message_helper(I, Acc, O) :-
   match_message_prefix(I, Match, Suffix),
   append(Acc, Match, NewAcc),
-  signal_message_helper(Suffix, NewAcc, O).
+  once(swallow_error(NewAcc, NewAccNoError)),
+  signal_message_helper(Suffix, NewAccNoError, O).
 
 % signal_message([1,1,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1,0,0,0,1,0,1,1,1,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,1,0,1,0,1,1,1,0,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1],M).
+% signal_message([1,1,1,0,1,1,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1,0,0,0,1,0,1,1,1,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,1,1,1,0,1,0,1,1,1,0,1,0,0,0,1,1,1,0,1,1,1,0,1,1,1,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,0,1,0,1,1,1,0,1,0,1,0,1,0],M).
 signal_message(I, O) :-
   signal_morse(I, Morse),
   signal_message_helper(Morse, [], O).
