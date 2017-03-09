@@ -8,6 +8,8 @@ from twisted.python import log
 from twisted.internet import reactor
 from twisted.internet.protocol import ServerFactory, ClientFactory, Protocol
 
+import conf
+
 # basic structure from:
 # http://www.codeghar.com/blog/echo-server-and-client-with-twisted.html
 
@@ -21,14 +23,19 @@ class ServerConfig(object):
         self.port = port
         self.peers = peers
 
+
 # "talk" is bidirectional; cf. https://piazza.com/class/ij4pi2k5m0d5gn?cid=290
 SERVER_CONFIG = {
-    'Alford':   ServerConfig(port=8000, peers=['Parker', 'Welsh']),
-    'Bolden':   ServerConfig(port=8001, peers=['Parker', 'Welsh']),
-    'Hamilton': ServerConfig(port=8002, peers=['Parker']),
-    'Parker':   ServerConfig(port=8003, peers=['Alford', 'Bolden',
-                                               'Hamilton']),
-    'Welsh':    ServerConfig(port=8004, peers=['Alford', 'Bolden']),
+    'Alford': ServerConfig(port=conf.PORT_NUM['ALFORD'],
+                           peers=['Hamilton', 'Welsh']),
+    'Ball': ServerConfig(port=conf.PORT_NUM['BALL'],
+                         peers=['Holiday', 'Welsh']),
+    'Hamilton': ServerConfig(port=conf.PORT_NUM['HAMILTON'],
+                             peers=['Alford', 'Holiday']),
+    'Holiday': ServerConfig(port=conf.PORT_NUM['HOLIDAY'],
+                            peers=['Ball', 'Hamilton']),
+    'Welsh': ServerConfig(port=conf.PORT_NUM['WELSH'],
+                          peers=['Alford', 'Ball'])
 }
 
 
@@ -50,7 +57,7 @@ class PlacesServerProtocol(Protocol):
     '''Protocol for servers to handle place query and update requests.
     '''
     base_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?"
-    api_key = "AIzaSyCL4-VLWNtZnjgyNnQ8xlkxK4kNqW5soTo"
+    api_key = conf.API_KEY
 
     def __init__(self, server):
         self.server = server
@@ -143,7 +150,8 @@ class PlacesServerProtocol(Protocol):
                                         client.timestamp, 
                                         client.time_difference)
         self.transport.write(
-            # API response is indented w/ 3 spaces because google hates us
+            # API response is indented w/ 3 spaces because eggert makes his 
+            # own rules
             # use two empty strings to get two newlines at the end per spec
             '\n'.join([at_response, json.dumps(data, indent=3), '', ''])
         )
